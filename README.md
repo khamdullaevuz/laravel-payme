@@ -46,6 +46,12 @@ return [
 ],
 ```
 
+## Migrate database
+
+```bash
+php artisan migrate
+```
+
 ## Usage in route
 
 ```php
