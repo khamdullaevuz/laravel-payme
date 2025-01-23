@@ -268,7 +268,7 @@ class PaymeService
         }
     }
 
-   public function GetStatement()
+    public function GetStatement()
     {
         if (!$this->hasParam(['from', 'to'])) {
             throw new PaymeException(PaymeException::JSON_RPC_ERROR);
