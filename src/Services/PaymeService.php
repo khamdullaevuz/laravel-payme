@@ -268,8 +268,56 @@ class PaymeService
         }
     }
 
-    public function GetStatement(){
-        // pass
+    public function GetStatement()
+    {
+        if (!$this->hasParam(['from', 'to'])) {
+            throw new PaymeException(PaymeException::JSON_RPC_ERROR);
+        }
+
+        $from = $this->params['from'];
+        $to = $this->params['to'];
+
+        $transactions = PaymeTransaction::whereBetween('create_time', [$from, $to])
+            ->orderBy('create_time', 'asc')
+            ->get();
+
+        if ($transactions->isEmpty()) {
+            return $this->successGetStatement([]);
+        }
+
+        $transactionList = $transactions->map(function ($transaction) {
+            return [
+                'id' => $transaction->transaction,
+                'time' => $transaction->create_time,
+                'amount' => $transaction->amount,
+                'account' => [
+                    'phone' => $transaction->owner_id
+                ],
+                'create_time' => $transaction->create_time,
+                'perform_time' => $transaction->perform_time ?? 0,
+                'cancel_time' => $transaction->cancel_time ?? 0,
+                'transaction' => $transaction->transaction,
+                'state' => $transaction->state,
+                'reason' => $transaction->reason,
+                'receivers' => $transaction->receivers()->get()->map(function ($receiver) {
+                    return [
+                        'id' => $receiver->id,
+                        'amount' => $receiver->amount,
+                    ];
+                }),
+            ];
+        });
+
+        return $this->successGetStatement($transactionList);
+    }
+
+    protected function successGetStatement($transactions)
+    {
+        return response()->json([
+            'result' => [
+                'transactions' => $transactions
+            ]
+        ]);
     }
 
     public function SetFiscalData(){
